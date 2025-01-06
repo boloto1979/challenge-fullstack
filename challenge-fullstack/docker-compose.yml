@@ -1,0 +1,50 @@
+version: "3.8"
+
+services:
+  challenge-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: challenge-app
+    entrypoint: sh /usr/local/bin/entrypoint.sh
+    depends_on:
+      challenge-db:
+        condition: service_healthy
+    volumes:
+      - ./:/var/www/html
+    ports:
+      - "8080:80"
+    networks:
+      - challenge-network
+    environment:
+      DB_CONNECTION: mysql
+      DB_HOST: challenge-db
+      DB_PORT: 3306
+      DB_DATABASE: challenge
+      DB_USERNAME: root
+      DB_PASSWORD: root
+
+  challenge-db:
+    image: mysql:5.7
+    container_name: challenge-db
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 10s
+      retries: 3
+    volumes:
+      - db_volume:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: challenge
+      MYSQL_ROOT_PASSWORD: root
+    networks:
+      - challenge-network
+
+networks:
+  challenge-network:
+    driver: bridge
+
+volumes:
+  db_volume: {}
